@@ -1,0 +1,36 @@
+# Locally installed tool path
+vlsi.core.local_tool_path: "../../ee477-modules"
+
+# Set top levels
+synthesis.inputs.top_module: "clk_gen_ds"
+sim.inputs.tb_name: "clk_gen_ds_tb"
+
+# Don't synthesize these gate-level netlist modules
+synthesis.inputs.preserve_modules: ["clk_gen"]
+
+# Extra simulation arguments, add these directories to VCS search path
+sim.inputs.options: [
+  "+incdir+${bsg_root}/bsg_misc",
+  # "-assert svaext"
+]
+sim.inputs.options_meta: [append, subst]
+
+# Custom SDC clock constraints
+vlsi.inputs:
+  custom_sdc_constraints:
+    # Disable timing through the reset gate (since it connects together a combinational loop!)
+    - "set_disable_timing -from B -to X CG/Xreset"
+  
+  custom_sdc_files:
+    - "constraints.tcl"
+  custom_sdc_files_meta: prependlocal # Prepend path of this config file!
+
+# Placement Constraints
+vlsi.inputs.placement_constraints:
+  - path: "TOP" # (this name isn't actually checked...)
+    type: toplevel
+    width:  100
+    height: 100
+    x: 0
+    y: 0
+    margins: {left: 0, right: 0, top: 0, bottom: 0}

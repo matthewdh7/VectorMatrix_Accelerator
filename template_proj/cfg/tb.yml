@@ -1,0 +1,11 @@
+# List of Verilog testbenches (or other sources) needed for simulation only.
+sim.inputs.input_files: [
+  # TODO: list verilog files
+  "EXAMPLE_PLEASE_DELETE_ME.v",
+]
+sim.inputs.input_files_meta: [append, subst]
+
+# List of trace files for the simulation
+sim.inputs.trace_files: [
+  # TODO: list any trace files
+]

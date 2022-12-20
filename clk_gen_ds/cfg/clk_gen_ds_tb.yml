@@ -1,0 +1,14 @@
+
+# List of Verilog testbenches (or other sources) needed for simulation only.
+sim.inputs.input_files: [
+  # Testbench
+  "v/clk_gen_ds_tb.v",
+
+  # BSG utilities for testbench
+  "${bsg_root}/bsg_test/bsg_nonsynth_clock_gen.v",
+  "${bsg_root}/bsg_test/bsg_nonsynth_reset_gen.v",
+  "${bsg_root}/bsg_clk_gen/bsg_nonsynth_clk_watcher.v",
+]
+sim.inputs.input_files_meta: [append, subst]
+
+
