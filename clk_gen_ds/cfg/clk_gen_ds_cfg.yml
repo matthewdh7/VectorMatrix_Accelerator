@@ -1,6 +1,3 @@
-# Locally installed tool path
-vlsi.core.local_tool_path: "../../ee477-modules"
-
 # Set top levels
 synthesis.inputs.top_module: "clk_gen_ds"
 sim.inputs.tb_name: "clk_gen_ds_tb"
@@ -11,7 +8,6 @@ synthesis.inputs.preserve_modules: ["clk_gen"]
 # Extra simulation arguments, add these directories to VCS search path
 sim.inputs.options: [
   "+incdir+${bsg_root}/bsg_misc",
-  # "-assert svaext"
 ]
 sim.inputs.options_meta: [append, subst]
 

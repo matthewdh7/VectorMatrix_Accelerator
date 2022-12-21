@@ -1,9 +1,5 @@
 # Main hammer config file
 
-# Locally installed tool path
-# Make sure this is set to the top level directory containing module_top.mk
-vlsi.core.local_tool_path: "../../ee477-modules"
-
 # Set top levels
 synthesis.inputs.top_module: "pow2"
 sim.inputs.tb_name: "pow2_tb"

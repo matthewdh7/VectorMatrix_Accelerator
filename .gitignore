@@ -1,0 +1,7 @@
+.vscode
+**__pycache__/
+**/hammer.log
+**/build
+**/DVEfiles
+**/output.json
+**_rom.v
