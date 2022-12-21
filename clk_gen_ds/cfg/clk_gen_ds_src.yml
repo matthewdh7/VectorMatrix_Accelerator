@@ -2,7 +2,7 @@
 # Used by both synthesis and RTL simulation.
 synthesis.inputs.input_files: [
   "v/clk_gen_ds.v",
-  "../../module_0/v/clk_gen.v",
+  "../../ee477-designs-module0/v/clk_gen.v",
 
   # TODO: Add any additional BSG files needed
   "${bsg_root}/bsg_misc/bsg_defines.v",
