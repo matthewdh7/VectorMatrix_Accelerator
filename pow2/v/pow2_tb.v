@@ -29,7 +29,7 @@ module pow2_tb;
   logic [31:0] dut_data_lo, dut_data_r;
   logic dut_ready_lo, dut_ready_r;
 
-  logic tr_v_lo;
+  logic tr_v_lo, tr_v_r;
   logic [31:0] tr_data_lo;
   logic tr_ready_lo, tr_ready_r;
 
@@ -78,7 +78,7 @@ module pow2_tb;
     ,.reset_i( reset )
 
     ,.exp_i  ( tr_data_lo )
-    ,.v_i    ( tr_v_lo )
+    ,.v_i    ( tr_v_r )
     ,.ready_o( dut_ready_lo )
     
     ,.data_o( dut_data_lo )
@@ -86,6 +86,9 @@ module pow2_tb;
     ,.yumi_i( dut_yumi_li )
     );
 
-  always_ff @(negedge clk) dut_yumi_li <= tr_ready_lo & dut_v_lo;
+  always_ff @(negedge clk) begin
+    dut_yumi_li <= tr_ready_lo & dut_v_lo;
+    tr_v_r <= tr_v_lo;
+  end
 
 endmodule
