@@ -36,12 +36,7 @@ module pow2_tb;
   logic [31:0] rom_addr_li;
   logic [35:0] rom_data_lo;
 
-  // Register input signals on negative edge
-  always_ff @(negedge clk) begin
-    dut_data_r  <= dut_data_lo;
-    dut_v_r     <= dut_v_lo;
-    dut_ready_r <= dut_ready_lo;
-  end
+  logic tr_yumi_li, dut_yumi_li;
 
   bsg_fsb_node_trace_replay #(.ring_width_p(32)
                              ,.rom_addr_width_p(32) )
@@ -56,7 +51,7 @@ module pow2_tb;
 
       , .v_o   ( tr_v_lo )
       , .data_o( tr_data_lo )
-      , .yumi_i( dut_ready_r & tr_v_lo )
+      , .yumi_i( tr_yumi_li )
 
       , .rom_addr_o( rom_addr_li )
       , .rom_data_i( rom_data_lo )
@@ -65,14 +60,18 @@ module pow2_tb;
       , .error_o()
       );
 
+  always_ff @(negedge clk) begin
+    dut_ready_r <= dut_ready_lo;
+    tr_yumi_li  <= dut_ready_r & tr_v_lo;
+    dut_v_r     <= dut_v_lo;
+    dut_data_r  <= dut_data_lo;
+  end
+
   trace_rom #(.width_p(36),.addr_width_p(32))
     ROM
       (.addr_i( rom_addr_li )
       ,.data_o( rom_data_lo )
       );
-
-  // Register ready signal on positive edge
-  always_ff @(posedge clk) tr_ready_r <= tr_ready_lo;
 
   pow2 DUT
     (.clk_i  ( clk )
@@ -84,8 +83,9 @@ module pow2_tb;
     
     ,.data_o( dut_data_lo )
     ,.v_o   ( dut_v_lo )
-    ,.yumi_i( tr_ready_r & dut_v_lo )
+    ,.yumi_i( dut_yumi_li )
     );
 
+  always_ff @(negedge clk) dut_yumi_li <= tr_ready_lo & dut_v_lo;
 
 endmodule
