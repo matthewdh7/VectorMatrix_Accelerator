@@ -1,6 +1,11 @@
+# Search directories for `include directives in simulations
+sim.inputs.tb_incdir: [
+  "${bsg_root}/bsg_misc"
+]
+sim.inputs.tb_incdir_meta: [subst]
 
 # List of Verilog testbenches (or other sources) needed for simulation only.
-sim.inputs.input_files: [
+sim.inputs.tb_input_files: [
   # Testbench
   "v/clk_gen_ds_tb.v",
 
@@ -9,6 +14,6 @@ sim.inputs.input_files: [
   "${bsg_root}/bsg_test/bsg_nonsynth_reset_gen.v",
   "${bsg_root}/bsg_clk_gen/bsg_nonsynth_clk_watcher.v",
 ]
-sim.inputs.input_files_meta: [append, subst]
+sim.inputs.tb_input_files_meta: [append, subst]
 
 

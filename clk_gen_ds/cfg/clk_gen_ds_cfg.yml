@@ -5,12 +5,6 @@ sim.inputs.tb_name: "clk_gen_ds_tb"
 # Don't synthesize these gate-level netlist modules
 synthesis.inputs.preserve_modules: ["clk_gen"]
 
-# Extra simulation arguments, add these directories to VCS search path
-sim.inputs.options: [
-  "+incdir+${bsg_root}/bsg_misc",
-]
-sim.inputs.options_meta: [append, subst]
-
 # Custom SDC clock constraints
 vlsi.inputs:
   custom_sdc_constraints:
