@@ -1,7 +1,7 @@
 # Make file for a Hammer project
 
 # TODO: Make sure this is set to the top level directory containing module_top.mk
-TOP_DIR = $(realpath ../../ee477-modules)
+TOP_DIR = $(realpath ../../ee477-hammer-cad)
 
 # Build directory location
 OBJ_DIR = build
