@@ -9,7 +9,7 @@ synthesis.inputs.preserve_modules: ["clk_gen"]
 vlsi.inputs:
   custom_sdc_constraints:
     # Disable timing through the reset gate (since it connects together a combinational loop!)
-    - "set_disable_timing -from B -to X CG/Xreset"
+    - "set_disable_timing -from B -to Y CG/reset"
   
   custom_sdc_files:
     - "constraints.tcl"
