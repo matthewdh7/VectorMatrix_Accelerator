@@ -8,9 +8,8 @@ module pow2_tb;
 
   /* Dump Test Waveform To VPD File */
   initial begin
-    $vcdpluson;
-    $vcdplusmemon;
-    $vcdplusautoflushon;
+    $fsdbDumpfile("waveform.fsdb");
+    $fsdbDumpvars();
   end
 
   /* Non-synth clock generator */
