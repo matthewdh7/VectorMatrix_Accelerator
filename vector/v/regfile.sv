@@ -6,7 +6,7 @@ module vrf #( parameter els_p = 32  // number of vectors stored
 
             , parameter lanes_p = 4
 
-            , localparam addr_width_lp = `BSG_SAFE_CLOG2(els_p / lanes_p)
+            , localparam addr_width_lp = `BSG_SAFE_CLOG2(els_p)
             , localparam rw_data_width_lp = vlen_p * vdw_p
             )
     ( input  logic clk_i
@@ -27,14 +27,14 @@ module vrf #( parameter els_p = 32  // number of vectors stored
 
     // read
     for (genvar i = 0; i < lanes_p; i++) begin: r_lane
-        assign r_data_o[i] = reg_arr[{i, r_addr_i}];
+        assign r_data_o[i] = reg_arr[r_addr_i];
     end // r_lane
 
     // write
     for (genvar i = 0; i < lanes_p; i++) begin: w_lane
         always_ff @(posedge clk_i) begin
             if (w_en_i[i] == 1'b1) begin
-                reg_arr[{i, w_addr_i}] <= w_data_i[i];
+                reg_arr[w_addr_i] <= w_data_i[i];
             end
         end
     end // w_lane
