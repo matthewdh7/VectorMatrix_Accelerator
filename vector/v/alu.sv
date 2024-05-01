@@ -31,7 +31,7 @@ module alu #( parameter vdw_p = 32
     logic [(vdw_p*2)-1:0] mult_lo;
 
     assign b_inv = (-1'b1) * b_i;
-    assign adder_b_li = (op == eSub) ? (b_inv + 1'b1) : b_i;
+    assign adder_b_li = (op == eSub) ? b_inv : b_i;
 
     bsg_adder_ripple_carry #(.width_p(vdw_p))
         adder
