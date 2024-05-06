@@ -1,14 +1,14 @@
 `include "bsg_defines.v"
 
 module alu #( parameter vdw_p = 32
-            , parameter op_len_p = 2
+            , parameter op_width_p = 2
             )
     ( input  logic clk_i
     , input  logic reset_i
         
     , input  logic [vdw_p-1:0] a_i
     , input  logic [vdw_p-1:0] b_i
-    , input  logic [op_len_p-1:0] op_i
+    , input  logic [op_width_p-1:0] op_i
 
     , output logic [vdw_p-1:0] result_o
 
@@ -17,13 +17,13 @@ module alu #( parameter vdw_p = 32
     , output logic flag_negative_o
     );
 
-    typedef enum logic [op_len_p-1:0] {
+    typedef enum logic [op_width_p-1:0] {
         eAdd='d0,
         eSub='d1,
         eMult='d2
     } eOp;
 
-    logic [op_len_p-1:0] op;
+    logic [op_width_p-1:0] op;
     assign op = op_i;
 
     logic [vdw_p-1:0] b_inv, adder_b_li, adder_s_lo;

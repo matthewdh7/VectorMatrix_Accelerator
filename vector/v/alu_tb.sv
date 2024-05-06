@@ -2,7 +2,7 @@
 module alu_tb;
 
     parameter vdw_p = 32;
-    parameter op_len_p = 2;
+    parameter op_width_p = 2;
 
     /* Dump Test Waveform To VPD File */
     initial begin
@@ -17,11 +17,11 @@ module alu_tb;
     logic reset;
 
     logic signed [vdw_p-1:0] a, b, out;
-    logic [op_len_p-1:0] op;
+    logic [op_width_p-1:0] op;
     logic flag_overflow, flag_zero, flag_negative;
 
     alu #(.vdw_p(vdw_p)
-         ,.op_len_p(op_len_p))
+         ,.op_width_p(op_width_p))
         dut
             (.clk_i     (clk)
             ,.reset_i   (reset)
