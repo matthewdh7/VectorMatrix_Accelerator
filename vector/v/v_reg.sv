@@ -27,6 +27,12 @@ module v_reg   #( parameter vlen_p = 8  // number of elements in vector
     // banked to allow for each lane to access independently
     logic [els_per_bank_lp-1:0][vdw_p-1:0] bank [lanes_p-1:0];
 
+    // only for simulation, comment out for synthesis; assumes 8 8-bit values per bank
+    initial
+        for(int i = 0; i < lanes_p; i++) begin : lane_bank
+            $readmemh("data.txt", bank);
+        end
+
     genvar i;
     for (i = 0; i < lanes_p; i++) begin: r_lane
         // read
