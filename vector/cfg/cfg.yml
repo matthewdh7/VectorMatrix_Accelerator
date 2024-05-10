@@ -1,8 +1,8 @@
 # Main hammer config file
 
 # TODO: Set top levels
-synthesis.inputs.top_module: "lane"
-sim.inputs.tb_name: "lane_tb"
+synthesis.inputs.top_module: "top"
+sim.inputs.tb_name: "top_tb"
 
 # Don't synthesize these gate-level netlist modules
 # TODO: List the names of any modules that don't require synthesis

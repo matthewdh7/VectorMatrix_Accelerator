@@ -6,7 +6,7 @@ synthesis.inputs.input_files: [
   "v/regfile.sv",
   "v/v_reg.sv",
   "v/lane.sv",
-  # "v/top.sv",
+  "v/top.sv",
   "${bsg_root}/bsg_misc/bsg_defines.v",
   "${bsg_root}/bsg_misc/bsg_adder_ripple_carry.v",
   "${bsg_root}/bsg_misc/bsg_mul_synth.v",

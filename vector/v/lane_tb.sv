@@ -93,7 +93,7 @@ module lane_tb;
     end
     endtask
 
-    // simulate writing of sequential data TODO
+    // simulate writing of sequential data
     task write(input int write_data);
     begin
         op_i = 4'b1001;
