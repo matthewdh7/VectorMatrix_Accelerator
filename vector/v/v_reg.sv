@@ -36,11 +36,11 @@ module v_reg   #( parameter vlen_p = 8  // number of elements in vector
     genvar i;
     for (i = 0; i < lanes_p; i++) begin: r_lane
         // read
-        assign r_addr_li[i] = r_addr_i[i] % lanes_p;
+        assign r_addr_li[i] = r_addr_i[i] >> lane_addr_width_lp;
         assign r_data_o[i] = bank[i][r_addr_li[i]];
 
         // write
-        assign w_addr_li[i] = w_addr_i[i] % lanes_p;
+        assign w_addr_li[i] = w_addr_i[i] >> lane_addr_width_lp;
         always_ff @(posedge clk_i) begin
             if (w_en_i[i]) bank[i][w_addr_li[i]] <= w_data_i[i];
         end // always_ff

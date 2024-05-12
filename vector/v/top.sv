@@ -44,15 +44,18 @@ module top      #( parameter els_p = 32  // number of vectors stored
 
     logic [lanes_p-1:0] v_lo, done_lo;
     logic [lanes_p-1:0][vdw_p-1:0] w_data_li, r_data_lo;
+    logic [(vlen_p * vdw_p)-1:0] w_data_i_shift;
+    logic [(lanes_p * vdw_p)-1:0] r_data_o_shift;
+    logic start_li, start_n;
+    logic [3:0] latch_op;
 
-    logic [counter_width_lp-1:0] count_lo;
-
+    //// state handler
     enum {s_IDLE, s_LOOP, s_DONE} ps, ns;
     always_comb begin
         case(ps)
             s_IDLE: ns = v_i ? s_LOOP : s_IDLE;
             s_LOOP: ns = &done_lo ? s_DONE : s_LOOP;
-            s_DONE: ns = yumi_i ? s_IDLE : s_DONE;
+            s_DONE: ns = (latch_op == 4'b1000) ? (yumi_i ? s_IDLE : s_DONE) : s_IDLE;
         endcase
     end
 
@@ -61,29 +64,30 @@ module top      #( parameter els_p = 32  // number of vectors stored
         else            ps <= ns;
     end
 
-    bsg_counter_set_en #(.max_val_p(els_per_lane_lp))
-        data_counter
-            (.clk_i     (clk_i)
-            ,.reset_i   (reset_i)
+    assign start_n = ps == s_IDLE & ns == s_LOOP;
+    always_ff @(posedge clk_i) start_li <= start_n;
 
-            ,.set_i     (ps == s_IDLE)
-            ,.en_i      (ps == s_LOOP)
-            ,.val_i     ('0)
-            ,.count_o   (count_lo)
-            );
-
+    //// convert external port read/write data to/from lane-usable read/write data
     genvar i;
     for (i = 0; i < lanes_p; i++) begin : lane_data_interface
-        always_ff @(posedge clk_i) begin
-            // access next write data based on start    jump size           # jumps     + width of one element
-            w_data_li[i] <= w_data_i[(i * vdw_p) + (lanes_p * vdw_p) * (count_lo) +: vdw_p];
-            if (v_lo[i])
-                r_data_o[(i * vdw_p) + (lanes_p * vdw_p) * (count_lo) +: vdw_p] <= r_data_lo[i];
-        end
+        assign w_data_li[i] = w_data_i_shift[(i * vdw_p) +: vdw_p];
+        assign r_data_o_shift[(i * vdw_p) +: vdw_p] = r_data_lo[i];
     end
 
+    always_ff @(posedge clk_i) begin
+        if (ps == s_IDLE) begin      
+            w_data_i_shift <= w_data_i;
+            r_data_o <= '0;
+            latch_op <= op_i;
+        end
+        else if (ps == s_LOOP) begin
+            if (&v_lo)
+                r_data_o <= {r_data_o_shift, r_data_o[(vlen_p*vdw_p) - 1 : (lanes_p*vdw_p)]};
+            w_data_i_shift <= w_data_i_shift >> lanes_p * vdw_p;
+        end    
+    end
 
-    // lanes
+    //// lanes
     logic [lanes_p-1:0][local_addr_width_lp-1:0] r_addr_lo, w_addr_lo;
     logic [lanes_p-1:0][vdw_p-1:0] r0_data_li, r1_data_li, w_data_lo;
     logic [lanes_p-1:0] w_en_lo;
@@ -101,7 +105,7 @@ module top      #( parameter els_p = 32  // number of vectors stored
                 ,.my_id_i   (i)
 
                 ,.op_i      (op_i)
-                ,.start_i   (v_i)
+                ,.start_i   (start_li)
 
                 ,.scalar_i  (scalar_i)
                 ,.w_data_i  (w_data_li[i])
@@ -120,7 +124,7 @@ module top      #( parameter els_p = 32  // number of vectors stored
                 );
     end
 
-    // vrf
+    //// vrf
     vrf #(.els_p(els_p)
          ,.vlen_p(vlen_p)
          ,.vdw_p(vdw_p)
@@ -142,5 +146,9 @@ module top      #( parameter els_p = 32  // number of vectors stored
             ,.w_data_i      (w_data_lo)
             ,.w_en_i        (w_en_lo)
         );
+
+    assign done_o = ps == s_DONE;
+    assign ready_o = ps == s_IDLE;
+    assign v_o = done_o;
 
 endmodule
