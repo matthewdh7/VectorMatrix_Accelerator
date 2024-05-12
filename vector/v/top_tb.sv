@@ -62,8 +62,14 @@ module top_tb;
 
         write(1, 16'b0000_0001_0000_0001);
         write(2, 16'b0001_0001_0100_0100);
-        add(1, 2, 0, 0, 0);
-        read(0); // expected 16'b0001_0010_0100_0101 YES
+        alu(0, 1, 2, 0, 0, 0); // add R0, R1, R2
+        read(0); // expected 16'b0001_0010_0100_0101 - YES
+
+        alu(1, 2, 1, 3, 0, 0); // sub R3, R2, R1
+        read(3); // expected 16'b0001_0000_0100_0011 - YES
+
+        alu(2, 1, 3, 5, 0, 0); // mul R5, R1, R3
+        read(5); // expected 16'b0000_0000_0000_0011 - YES
         $display("================ ENDING TEST ================");
         $finish;
     end
@@ -75,7 +81,7 @@ module top_tb;
         v_i = 0;
         $display("writing...");
         while(~done_o) @(posedge clk);
-        $display("--done writing--");
+        $display("--done writing");
     end
     endtask
 
@@ -86,28 +92,27 @@ module top_tb;
         v_i = 0; yumi_i = 1;
         while(~done_o) @(posedge clk);
 
-        $display("r_data_o: %b", r_data_o);
+        $display("--r_data_o: %b", r_data_o);
         @(posedge clk);
         yumi_i = 0;
     end
     endtask
 
-    task add(input int addr1, addr2, addrOut, use_scalar, scalar);
+    task alu(input int op, addr1, addr2, addrOut, use_scalar, scalar);
     begin
         @(posedge clk);
-        if (use_scalar == 1) begin
-            op_i = 4'b0100;
-        end else begin
-            op_i = 4'b0000;
-        end
-        addrA_i = addr1;
-        addrB_i = addr2;
-        addrC_i = addrOut;
-        v_i = 1;
+        op_i[3:2] = (use_scalar == 1) ? 2'b01 : 2'b00;
+        case (op)
+            /*add*/ 0: op_i[1:0] = 2'b00;
+            /*sub*/ 1: op_i[1:0] = 2'b01;
+            /*mul*/ 2: op_i[1:0] = 2'b10;
+        endcase
+
+        addrA_i = addr1; addrB_i = addr2; addrC_i = addrOut; v_i = 1;
         @(posedge clk);
         v_i = 0;
         while(~done_o) begin
-            $display("operating...");
+            $display("alu operation busy...");
             @(posedge clk);
         end
     end
