@@ -18,7 +18,8 @@ module top      #( parameter els_p = 8  // number of vectors stored
     // input interface
     , input logic [v_addr_width_lp-1:0] addrA_i // operand 1
     , input logic [v_addr_width_lp-1:0] addrB_i // operand 2
-    , input logic [v_addr_width_lp-1:0] addrC_i // destination
+    , input logic [v_addr_width_lp-1:0] addrC_i // operand 3 (for fma)
+    , input logic [v_addr_width_lp-1:0] addrD_i // destination
     , input logic [vdw_p-1:0] scalar_i
     , input logic [(vlen_p * vdw_p)-1:0] w_data_i
     , input logic [3:0] op_i
@@ -36,6 +37,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
     0000: add
     0001: sub
     0010: mult
+    0011: multiply-add
     0100: add v&s
     0101: sub v&s
     0110: mult v&s
@@ -90,7 +92,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
 
     //// lanes
     logic [lanes_p-1:0][local_addr_width_lp-1:0] r_addr_lo, w_addr_lo;
-    logic [lanes_p-1:0][vdw_p-1:0] r0_data_li, r1_data_li, w_data_lo;
+    logic [lanes_p-1:0][vdw_p-1:0] r0_data_li, r1_data_li, r2_data_li, w_data_lo;
     logic [lanes_p-1:0] w_en_lo;
 
     for (i = 0; i < lanes_p; i++) begin : lane
@@ -118,6 +120,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
                 ,.r_addr_o  (r_addr_lo[i])
                 ,.r0_data_i (r0_data_li[i])
                 ,.r1_data_i (r1_data_li[i])
+                ,.r2_data_i (r2_data_li[i])
 
                 ,.w_addr_o  (w_addr_lo[i])
                 ,.w_data_o  (w_data_lo[i])
@@ -136,12 +139,14 @@ module top      #( parameter els_p = 8  // number of vectors stored
 
             ,.r_reg0_addr_i (addrA_i)
             ,.r_reg1_addr_i (addrB_i)
+            ,.r_reg2_addr_i (addrC_i)
 
             ,.r_addr_i      (r_addr_lo)
             ,.r0_data_o     (r0_data_li)
             ,.r1_data_o     (r1_data_li)
+            ,.r2_data_o     (r2_data_li)
 
-            ,.w_reg_addr_i  (addrC_i)
+            ,.w_reg_addr_i  (addrD_i)
 
             ,.w_addr_i      (w_addr_lo)
             ,.w_data_i      (w_data_lo)

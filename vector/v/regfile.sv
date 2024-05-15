@@ -1,7 +1,7 @@
 `include "bsg_defines.v"
 
 /*
-    Two vector registers can be active at any given time, and the input read addresses will select which element
+    Three vector registers can be active at any given time, and the input read addresses will select which element
     of the vectors that lane is working on.
 */
 module vrf #( parameter els_p = 32  // number of vectors stored
@@ -19,10 +19,12 @@ module vrf #( parameter els_p = 32  // number of vectors stored
         
     , input  logic [v_addr_width_lp-1:0] r_reg0_addr_i
     , input  logic [v_addr_width_lp-1:0] r_reg1_addr_i
+    , input  logic [v_addr_width_lp-1:0] r_reg2_addr_i
 
     , input  logic [lanes_p-1:0][local_addr_width_lp-1:0] r_addr_i
     , output logic [lanes_p-1:0][vdw_p-1:0] r0_data_o
     , output logic [lanes_p-1:0][vdw_p-1:0] r1_data_o
+    , output logic [lanes_p-1:0][vdw_p-1:0] r2_data_o
 
     , input  logic [v_addr_width_lp-1:0] w_reg_addr_i
 
@@ -73,6 +75,14 @@ module vrf #( parameter els_p = 32  // number of vectors stored
             (.data_i    (r_data_lo)
             ,.sel_i     (r_reg1_addr_i)
             ,.data_o    (r1_data_o)
+            );
+    
+    bsg_mux     #(.width_p(lanes_p*vdw_p)
+                 ,.els_p(els_p))
+        rd2_mux
+            (.data_i    (r_data_lo)
+            ,.sel_i     (r_reg2_addr_i)
+            ,.data_o    (r2_data_o)
             );
 
 endmodule

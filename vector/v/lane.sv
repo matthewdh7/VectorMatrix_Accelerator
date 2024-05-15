@@ -33,6 +33,7 @@ module lane #(parameter els_p = 8  // number of vectors stored
     , output logic [local_addr_width_lp-1:0] r_addr_o
     , input  logic [vdw_p-1:0] r0_data_i
     , input  logic [vdw_p-1:0] r1_data_i
+    , input  logic [vdw_p-1:0] r2_data_i
 
     , output logic [local_addr_width_lp-1:0] w_addr_o
     , output logic [vdw_p-1:0] w_data_o
@@ -81,7 +82,8 @@ module lane #(parameter els_p = 8  // number of vectors stored
     assign v_o = ps == s_LOOP;
 
     // EX stage
-    logic [vdw_p-1:0] alu_a_li, alu_b_li, alu_result_lo, EX_r1_data, EX_scalar;
+    logic [vdw_p-1:0] alu_a_li, alu_b_li, alu_result_lo, fma_a_li, fma_b_li, fma_c_li, fma_result_lo;
+    logic [vdw_p-1:0] EX_r1_data, EX_r2_data, EX_scalar;
     logic [1:0] alu_op_li;
     logic [local_addr_width_lp-1:0] EX_w_addr;
     logic [vdw_p-1:0] EX_w_data_ext; // external write data, if opcode is a write
@@ -91,11 +93,15 @@ module lane #(parameter els_p = 8  // number of vectors stored
         alu_a_li <= r0_data_i;
         // alu_b_li handled by mux
         alu_op_li <= op_i[1:0];
+        fma_a_li <= r0_data_i;
+        fma_b_li <= r1_data_i;
+        fma_c_li <= r2_data_i;
         EX_w_addr <= REG_addr;
         EX_w_data_ext <= REG_w_data_ext;
         EX_w_en <= REG_w_en;
         EX_scalar <= scalar_i;
         EX_r1_data <= r1_data_i;
+        EX_r2_data <= r2_data_i;
         EX_done <= REG_done;
     end
 
@@ -109,21 +115,30 @@ module lane #(parameter els_p = 8  // number of vectors stored
 
     // WB stage
     logic [local_addr_width_lp-1:0] WB_w_addr;
-    logic [vdw_p-1:0] WB_w_data_ext, WB_w_data_alu, WB_w_data;
+    logic [vdw_p-1:0] WB_w_data_ext, WB_w_data_alu, WB_w_data_fma, WB_w_data_exec, WB_w_data;
     logic WB_w_en, WB_done;
 
     always_ff @(posedge clk_i) begin
         WB_w_addr <= EX_w_addr;
         WB_w_data_ext <= EX_w_data_ext;
         WB_w_data_alu <= alu_result_lo;
+        WB_w_data_fma <= fma_result_lo;
         WB_w_en <= EX_w_en;
         WB_done <= EX_done;
     end
 
     bsg_mux    #(.width_p(vdw_p)
                 ,.els_p(2))
+        EX_w_data_mux
+            (.data_i    ({WB_w_data_fma, WB_w_data_alu})
+            ,.sel_i     (op_i[1:0] == 2'b11)
+            ,.data_o    (WB_w_data_exec)
+            );
+
+    bsg_mux    #(.width_p(vdw_p)
+                ,.els_p(2))
         w_data_mux
-            (.data_i    ({WB_w_data_ext, WB_w_data_alu})
+            (.data_i    ({WB_w_data_ext, WB_w_data_exec})
             ,.sel_i     (op_i[3])
             ,.data_o    (WB_w_data)
             );
@@ -164,6 +179,18 @@ module lane #(parameter els_p = 8  // number of vectors stored
             ,.flag_overflow_o   ()
             ,.flag_zero_o       ()
             ,.flag_negative_o   ()
+            );
+
+    mult_add #(.vdw_p(vdw_p))
+        fma
+            (.clk_i     (clk_i)
+            ,.reset_i   (reset_i)
+            
+            ,.r0_i      (fma_a_li)
+            ,.r1_i      (fma_b_li)
+            ,.r2_i      (fma_c_li)
+            
+            ,.result_o  (fma_result_lo)
             );
 
     assign done_o = (op_i == 4'b1000) ? ps == s_DONE : WB_done;

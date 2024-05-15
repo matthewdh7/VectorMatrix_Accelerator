@@ -17,7 +17,7 @@ module top_tb;
     logic clk, reset;
     bsg_nonsynth_clock_gen #(1000) clk_gen_1 (clk);
 
-    logic [v_addr_width_lp-1:0] addrA_i, addrB_i, addrC_i;
+    logic [v_addr_width_lp-1:0] addrA_i, addrB_i, addrC_i, addrD_i;
     logic [vlen_p*vdw_p-1:0] w_data_i, r_data_o;
     logic v_i, ready_o, v_o, yumi_i, done_o;
     logic [vdw_p-1:0] scalar_i;
@@ -35,6 +35,7 @@ module top_tb;
             ,.addrA_i   (addrA_i)
             ,.addrB_i   (addrB_i)
             ,.addrC_i   (addrC_i)
+            ,.addrD_i   (addrD_i)
             ,.scalar_i  (scalar_i)
             ,.w_data_i  (w_data_i)
             ,.op_i      (op_i)
@@ -49,17 +50,10 @@ module top_tb;
             );
 
     initial begin
-        op_i <= '0; addrA_i <= '0; addrB_i <= '0; addrC_i <= '0; w_data_i <= '0; v_i <= 0; yumi_i <= 0; scalar_i <= '0; reset <= 1; @(posedge clk);
+        op_i <= '0; addrA_i <= '0; addrB_i <= '0; addrC_i <= '0; addrD_i <= '0; w_data_i <= '0; v_i <= 0; yumi_i <= 0; scalar_i <= '0; reset <= 1; @(posedge clk);
         reset <= 0; repeat(1) @(posedge clk);
         $display("================ STARTING TEST ================");
-        // write(0, 16'b1111_0111_0011_0001);
-        // @(posedge clk);
-        // read(0);
-        // write(2, 16'b0000_0010_0100_1000);
-        // @(posedge clk);
-        // read(2);
-        // read(0);
-
+        /*
         write(1, 16'b0000_0001_0000_0001);
         write(2, 16'b0001_0001_0100_0100);
         alu(0, 1, 2, 0, 0, 0); // add R0, R1, R2
@@ -70,13 +64,20 @@ module top_tb;
 
         alu(2, 1, 3, 5, 0, 0); // mul R5, R1, R3
         read(5); // expected 16'b0000_0000_0000_0011 - YES
+        */
+
+        write(4, 16'b0001_0001_0010_0010);
+        write(5, 16'b0100_1000_0010_0010);
+        write(6, 16'b0000_0110_0001_0011);
+        fma(4, 5, 6, 7);
+        read(7); // expected 16'b0100_1110_0101_0111 - 
         $display("================ ENDING TEST ================");
         $finish;
     end
 
     task write(input int addr, w_data);
     begin
-        op_i = 4'b1001; w_data_i = w_data; v_i = 1; addrC_i = addr;
+        op_i = 4'b1001; w_data_i = w_data; v_i = 1; addrD_i = addr;
         @(posedge clk);
         v_i = 0;
         $display("writing...");
@@ -108,11 +109,26 @@ module top_tb;
             /*mul*/ 2: op_i[1:0] = 2'b10;
         endcase
 
-        addrA_i = addr1; addrB_i = addr2; addrC_i = addrOut; v_i = 1;
+        addrA_i = addr1; addrB_i = addr2; addrD_i = addrOut; v_i = 1;
         @(posedge clk);
         v_i = 0;
         while(~done_o) begin
             $display("alu operation busy...");
+            @(posedge clk);
+        end
+    end
+    endtask
+
+    task fma(input int addr1, addr2, addr3, addrOut);
+    begin
+        @(posedge clk);
+        op_i = 4'b0011;
+
+        addrA_i = addr1; addrB_i = addr2; addrC_i = addr3; addrD_i = addrOut; v_i = 1;
+        @(posedge clk);
+        v_i = 0;
+        while(~done_o) begin
+            $display("fma operation busy...");
             @(posedge clk);
         end
     end
