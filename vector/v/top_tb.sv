@@ -20,7 +20,7 @@ module top_tb;
     logic [v_addr_width_lp-1:0] addrA_i, addrB_i, addrC_i;
     logic [vlen_p*vdw_p-1:0] w_data_i, r_data_o;
     logic v_i, ready_o, v_o, yumi_i, done_o;
-    logic [vlen_p*vdw_p-1:0] scalar_i;
+    logic [vdw_p-1:0] scalar_i;
     logic [3:0] op_i;
 
     top     #(.els_p(els_p)

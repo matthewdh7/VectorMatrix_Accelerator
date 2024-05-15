@@ -1,5 +1,5 @@
 `include "bsg_defines.v"
-module top      #( parameter els_p = 32  // number of vectors stored
+module top      #( parameter els_p = 8  // number of vectors stored
                  , parameter vlen_p = 8  // number of elements per vector
                  , parameter vdw_p = 8  // number of bits per element
  
@@ -10,6 +10,7 @@ module top      #( parameter els_p = 32  // number of vectors stored
                  , localparam addr_width_lp = v_addr_width_lp + local_addr_width_lp
                  , localparam els_per_lane_lp = vlen_p / vdw_p
                  , localparam counter_width_lp = `BSG_SAFE_CLOG2(els_per_lane_lp)
+                 , localparam id_width_lp = `BSG_SAFE_CLOG2(lanes_p)
                 )
     ( input clk_i
     , input reset_i
@@ -102,7 +103,7 @@ module top      #( parameter els_p = 32  // number of vectors stored
                 (.clk_i     (clk_i)
                 ,.reset_i   (reset_i)
   
-                ,.my_id_i   (i)
+                ,.my_id_i   ((id_width_lp)'(i))
 
                 ,.op_i      (op_i)
                 ,.start_i   (start_li)

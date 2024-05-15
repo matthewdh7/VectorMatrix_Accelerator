@@ -1,8 +1,8 @@
 `include "bsg_defines.v"
 
-module lane #(parameter els_p = 32  // number of vectors stored
+module lane #(parameter els_p = 8  // number of vectors stored
             , parameter vlen_p = 8  // number of elements per vector
-            , parameter vdw_p = 32  // number of bits per element
+            , parameter vdw_p = 8  // number of bits per element
 
             , parameter lanes_p = 4 // also used as stride in local addr calculation
 
