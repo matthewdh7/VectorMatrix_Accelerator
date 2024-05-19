@@ -16,13 +16,17 @@ module top      #( parameter els_p = 8  // number of vectors stored
     , input reset_i
 
     // input interface
+    , input logic [3:0] op_i
+
     , input logic [v_addr_width_lp-1:0] addrA_i // operand 1
     , input logic [v_addr_width_lp-1:0] addrB_i // operand 2
     , input logic [v_addr_width_lp-1:0] addrC_i // operand 3 (for fma)
     , input logic [v_addr_width_lp-1:0] addrD_i // destination
+
+    , input logic [v_addr_width_lp-1:0] fma_cycles_i
     , input logic [vdw_p-1:0] scalar_i
     , input logic [(vlen_p * vdw_p)-1:0] w_data_i
-    , input logic [3:0] op_i
+
     , input v_i
     , output ready_o
 
@@ -37,12 +41,13 @@ module top      #( parameter els_p = 8  // number of vectors stored
     0000: add
     0001: sub
     0010: mult
-    0011: multiply-add
+    0011: multiply-add - UNUSED AFTER IMPLEMENTING M MUL
     0100: add v&s
     0101: sub v&s
     0110: mult v&s
     1000: read
     1001: write
+    1111: matrix multiply
     */
 
     logic [lanes_p-1:0] v_lo, done_lo;
@@ -51,6 +56,8 @@ module top      #( parameter els_p = 8  // number of vectors stored
     logic [(lanes_p * vdw_p)-1:0] r_data_o_shift;
     logic start_li, start_n;
     logic [3:0] latch_op;
+
+    logic [lanes_p-1:0][v_addr_width_lp-1:0] addrA_li, addrB_li, addrC_li, addrD_li;
 
     //// state handler
     enum {s_IDLE, s_LOOP, s_DONE} ps, ns;
