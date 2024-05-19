@@ -8,7 +8,7 @@ sim.inputs.tb_incdir_meta: [subst]
 # List of Verilog testbenches (or other sources) needed for simulation only.
 sim.inputs.tb_input_files: [
   # TODO: list verilog files
-  "v/top_tb.sv",
+  "v/multadd_tb.sv",
   # BSG utilities for testbench
   "${bsg_root}/bsg_test/bsg_nonsynth_clock_gen.v",
   "${bsg_root}/bsg_test/bsg_nonsynth_reset_gen.v",

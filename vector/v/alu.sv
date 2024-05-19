@@ -56,10 +56,6 @@ module alu #( parameter vdw_p = 32
                 result_o = adder_s_lo;
                 flag_overflow_o = ~adder_c_lo;
             end
-            eMult: begin
-                result_o = mult_lo[vdw_p-1:0];
-                flag_overflow_o = mult_lo[vdw_p];
-            end
         endcase
     end
 

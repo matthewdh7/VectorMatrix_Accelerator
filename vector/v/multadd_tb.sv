@@ -16,7 +16,7 @@ module multadd_tb;
     logic reset_i;
 
     logic signed [vdw_p-1:0] a_i, b_i, data_o;
-    logic alu_op_i;
+    logic [1:0] alu_op_i;
     logic use_fma_i, fma_first_i;
     logic flag_overflow_o, flag_zero_o, flag_negative_o;
 
@@ -46,6 +46,9 @@ module multadd_tb;
         end
         @(posedge clk_i);
         $display("Output = %d", data_o); // expected = 10
+
+        a_i <= 'd7; b_i <= 'd3; alu_op_i <= 'd2; repeat(2) @(posedge clk_i);
+        $display("Output = %d", data_o); // 21
         
         $finish;
     end
