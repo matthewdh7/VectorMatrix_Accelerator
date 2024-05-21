@@ -22,6 +22,7 @@ module lane #(parameter els_p = 8  // number of vectors stored
     , input  logic [op_width_p-1:0] op_i
     , input  logic start_i
 
+    , input  logic [local_addr_width_lp-1:0] w_addr_offset_i // used for fma operations
     , input  logic [vdw_p-1:0] scalar_i
     , input  logic [vdw_p-1:0] w_data_i
     , output logic [vdw_p-1:0] r_data_o
@@ -73,7 +74,7 @@ module lane #(parameter els_p = 8  // number of vectors stored
     assign REG_normal_rd_addr = my_id_i + (lanes_p * count_lo);
     assign REG_fma_rd_addr = count_lo;
     assign REG_r_addr = (op_i == 4'b1111) ? REG_fma_rd_addr : REG_normal_rd_addr;
-    assign REG_w_addr = (op_i == 4'b1111) ? (local_addr_width_lp)'(my_id_i) : REG_normal_rd_addr;
+    assign REG_w_addr = (op_i == 4'b1111) ? (local_addr_width_lp)'(my_id_i) + w_addr_offset_i : REG_normal_rd_addr;
     // write if not read operation AND if not fma operation (unless on the final accumulation)
     assign REG_w_en = (ps == s_LOOP) & ((op_i == 4'b1111) ? 
                                         (count_lo == counter_max) :

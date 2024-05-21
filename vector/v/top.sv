@@ -58,22 +58,20 @@ module top      #( parameter els_p = 8  // number of vectors stored
 
     logic [lanes_p-1:0][v_addr_width_lp-1:0] addrA_li, addrB_li, addrD_li;
 
-    logic counter_set_li;
+    logic fma_counter_set_li, data_counter_set_li;
     logic [counter_width_lp-1:0] fma_count_lo, data_count_lo;
 
     //// state handler
     enum {s_IDLE, s_LOOP, s_FMA_START, s_FMA_LOOP, s_DONE} ps, ns;
     always_comb begin
         case(ps)
-            s_IDLE: ns = v_i ? ((op_i == 4'b1111) ? s_FMA_START : s_LOOP) : s_IDLE;
-            s_LOOP: ns = &done_lo ? s_DONE : s_LOOP;
-            s_FMA_START: ns = s_FMA_LOOP;
-            s_FMA_LOOP: begin
-                if (&done_lo & (fma_count_lo == vectors_per_lane_lp - 1)) ns = s_DONE;
-                else if (&done_lo) ns = s_FMA_START;
-                else ns = s_FMA_LOOP;
-            end
-            s_DONE: ns = (latch_op == 4'b1000) ? (yumi_i ? s_IDLE : s_DONE) : s_IDLE;
+            s_IDLE:         ns = v_i ? ((op_i == 4'b1111) ? s_FMA_START : s_LOOP) : s_IDLE;
+            s_LOOP:         ns = &done_lo ? s_DONE : s_LOOP;
+
+            s_FMA_START:    ns = s_FMA_LOOP;
+            s_FMA_LOOP:     ns = &done_lo ? (fma_count_lo == vectors_per_lane_lp - 1 ? s_DONE : s_FMA_START) : s_FMA_LOOP;
+
+            s_DONE:         ns = (latch_op == 4'b1000) ? (yumi_i ? s_IDLE : s_DONE) : s_IDLE;
         endcase
     end
 
@@ -82,15 +80,17 @@ module top      #( parameter els_p = 8  // number of vectors stored
         else            ps <= ns;
     end
 
-    assign start_n = ps == s_IDLE & ns == s_LOOP | (ps == s_FMA_START);
+    assign start_n = (ps == s_IDLE & ns == s_LOOP) | ps == s_FMA_START;
     always_ff @(posedge clk_i) start_li <= start_n;
+
+    assign fma_counter_set_li = ps == s_IDLE;
 
     bsg_counter_set_en #(.max_val_p(vectors_per_lane_lp-1))
         fma_cycle_counter
             (.clk_i     (clk_i)
             ,.reset_i   (reset_i)
 
-            ,.set_i     (counter_set_li)
+            ,.set_i     (fma_counter_set_li)
             ,.en_i      (&done_lo) // if more v els than lanes, each lane needs to do multiple dot products to finish matrix
             ,.val_i     ('0)
             ,.count_o   (fma_count_lo)
@@ -111,20 +111,19 @@ module top      #( parameter els_p = 8  // number of vectors stored
         end
         else if (ps == s_LOOP | ps == s_FMA_LOOP) begin
             if (&v_lo)
-                // r_data_o <= {r_data_o_shift, r_data_o[(vlen_p*vdw_p) - 1 : (lanes_p*vdw_p)]};
                 r_data_o[(lanes_p*vdw_p)*data_count_lo +: (lanes_p*vdw_p)] <= r_data_o_shift;
             w_data_i_shift <= w_data_i_shift >> lanes_p * vdw_p;
         end    
     end
 
-    assign counter_set_li = ps == s_IDLE;
+    assign data_counter_set_li = ps == s_IDLE;
 
     bsg_counter_set_en #(.max_val_p(2**counter_width_lp - 1))
         r_data_counter
             (.clk_i     (clk_i)
             ,.reset_i   (reset_i)
 
-            ,.set_i     (counter_set_li)
+            ,.set_i     (data_counter_set_li)
             ,.en_i      (&v_lo & ps == s_LOOP)
             ,.val_i     ('0)
             ,.count_o   (data_count_lo)
@@ -132,9 +131,8 @@ module top      #( parameter els_p = 8  // number of vectors stored
 
     //// lane address decode
     for (i = 0; i < lanes_p; i++) begin : lane_addresses
-        assign addrA_li[i] = addrA_i + ((latch_op == 4'b1111) ? fma_count_lo : 1'b0);
-        assign addrB_li[i] = (latch_op == 4'b1111) ? addrB_i + (v_addr_width_lp)'(i) : addrB_i;
-        // assign addrB_li[i] = addrB_i + (v_addr_width_lp)'(i);
+        assign addrA_li[i] = addrA_i;
+        assign addrB_li[i] = (latch_op == 4'b1111) ? addrB_i + (v_addr_width_lp)'(i) + (fma_count_lo * lanes_p): addrB_i;
         assign addrD_li[i] = addrD_i;
     end
 
@@ -142,6 +140,10 @@ module top      #( parameter els_p = 8  // number of vectors stored
     logic [lanes_p-1:0][local_addr_width_lp-1:0] r_addr_lo, w_addr_lo;
     logic [lanes_p-1:0][vdw_p-1:0] r0_data_li, r1_data_li, w_data_lo;
     logic [lanes_p-1:0] w_en_lo;
+
+    // only used for dot product
+    logic [local_addr_width_lp-1:0] w_addr_offset_li;
+    assign w_addr_offset_li = (fma_count_lo * lanes_p);
 
     for (i = 0; i < lanes_p; i++) begin : lane
         lane #(.els_p(els_p)
@@ -158,6 +160,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
                 ,.op_i      (op_i)
                 ,.start_i   (start_li)
 
+                ,.w_addr_offset_i (w_addr_offset_li)
                 ,.scalar_i  (scalar_i)
                 ,.w_data_i  (w_data_li[i])
                 ,.r_data_o  (r_data_lo[i])
@@ -198,6 +201,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
             ,.w_en_i        (w_en_lo)
         );
 
+    //// external output signals
     assign done_o = ps == s_DONE;
     assign ready_o = ps == s_IDLE;
     assign v_o = done_o;

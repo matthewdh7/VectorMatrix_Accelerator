@@ -57,31 +57,19 @@ module top_tb;
         reset <= 0; repeat(1) @(posedge clk);
         $display("================ STARTING TEST ================");
 
-        // write(1, 16'b0000_0001_0000_0001);
-        // write(2, 16'b0001_0001_0100_0100);
-
-        // alu(0, 1, 2, 0, 0, 0); // add R0, R1, R2
-        // read(0); // expected 16'b0001_0010_0100_0101 - YES
-
-        // alu(1, 2, 1, 3, 0, 0); // sub R3, R2, R1
-        // read(3); // expected 16'b0001_0000_0100_0011 - YES
-
-        // alu(2, 1, 3, 5, 0, 0); // mul R5, R1, R3
-        // read(5); // expected 16'b0000_0000_0000_0011 - YES
-
-        // read(1);
-        // alu(2, 1, 1, 1, 1, 2); // addi R1, R1, 'd2
-        // read(1); // expected 16'b0000_0010_0000_0010 - YES
-
         write(0, 16'b0001_0001_0001_0001);
+
         write(1, 16'b0100_0011_0010_0001);
-        write(2, 16'b0100_0011_0010_0001);
-        write(3, 16'b0100_0011_0010_0001);
-        write(4, 16'b0100_0011_0010_0001);
+        write(2, 16'b0010_0010_0010_0010);
+        write(3, 16'b0001_0000_0000_0111);
+        write(4, 16'b0010_0011_0000_0110);
 
         repeat(5) @(posedge clk);
-        dotprod(0, 1, 5);
-        read(5); // expected 16'b1000_1000_1000_1000
+        dotprod(5, 0, 1);
+        read(5); // expected 16'b1011_1000_1000_1010 - YES
+
+        alu(0, 7, 1, 2, 0, 0);
+        read(7); // expected 16'b0110_0101_0100_0011 - YES
  
         $display("================ ENDING TEST ================");
         $finish;
@@ -111,7 +99,7 @@ module top_tb;
     end
     endtask
 
-    task alu(input int op, addr1, addr2, addrOut, use_scalar, scalar);
+    task alu(input int op, addrOut, addr1, addr2, use_scalar, scalar);
     begin
         @(posedge clk);
         op_i[3:2] = (use_scalar == 1) ? 2'b01 : 2'b00;
@@ -131,7 +119,8 @@ module top_tb;
     end
     endtask
 
-    task dotprod(input int addr1, addr2, addrOut);
+    // more like a partial matrix multiply than just a dot product
+    task dotprod(input int addrOut, addr1, addr2);
     begin
         @(posedge clk);
         op_i = 4'b1111; addrA_i = addr1; addrB_i = addr2; addrD_i = addrOut; v_i = 1;
