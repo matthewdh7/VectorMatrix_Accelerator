@@ -7,12 +7,13 @@ synthesis.inputs.input_files: [
   "v/v_reg.sv",
   "v/lane.sv",
   "v/top.sv",
-  "v/mult_add.sv",
+  "v/multadd.sv",
   "${bsg_root}/bsg_misc/bsg_defines.v",
   "${bsg_root}/bsg_misc/bsg_adder_ripple_carry.v",
   "${bsg_root}/bsg_misc/bsg_mul_synth.v",
   "${bsg_root}/bsg_misc/bsg_mux.v",
-  "${bsg_root}/bsg_misc/bsg_counter_set_en.v"
+  "${bsg_root}/bsg_misc/bsg_counter_set_en.v",
+  "${bsg_root}/bsg_misc/bsg_dff.v"
 ]
 synthesis.inputs.input_files_meta: [append, subst]
 
