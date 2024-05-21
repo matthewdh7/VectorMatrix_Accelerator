@@ -1,7 +1,7 @@
 `include "bsg_defines.v"
 module top_tb;
 
-    parameter els_p = 8;  // number of vectors stored
+    parameter els_p = 10;  // number of vectors stored
     parameter vlen_p = 4;  // number of elements per vector
     parameter vdw_p = 4;  // number of bits per element
     parameter lanes_p = 2; // also used as stride in local addr calculation
@@ -17,60 +17,72 @@ module top_tb;
     logic clk, reset;
     bsg_nonsynth_clock_gen #(1000) clk_gen_1 (clk);
 
-    logic [v_addr_width_lp-1:0] addrA_i, addrB_i, addrC_i, addrD_i;
+    logic [v_addr_width_lp-1:0] addrA_i, addrB_i, addrD_i;
     logic [vlen_p*vdw_p-1:0] w_data_i, r_data_o;
     logic v_i, ready_o, v_o, yumi_i, done_o;
     logic [vdw_p-1:0] scalar_i;
     logic [3:0] op_i;
+    logic [v_addr_width_lp-1:0] fma_cycles_i;
 
     top     #(.els_p(els_p)
              ,.vlen_p(vlen_p)
              ,.vdw_p(vdw_p)
              ,.lanes_p(lanes_p))
         dut
-            (.clk_i     (clk)
-            ,.reset_i   (reset)
+            (.clk_i         (clk)
+            ,.reset_i       (reset)
 
             // input interface
-            ,.addrA_i   (addrA_i)
-            ,.addrB_i   (addrB_i)
-            ,.addrC_i   (addrC_i)
-            ,.addrD_i   (addrD_i)
-            ,.scalar_i  (scalar_i)
-            ,.w_data_i  (w_data_i)
-            ,.op_i      (op_i)
-            ,.v_i       (v_i)
-            ,.ready_o   (ready_o)
+            ,.op_i          (op_i)
+
+            ,.addrA_i       (addrA_i)
+            ,.addrB_i       (addrB_i)
+            ,.addrD_i       (addrD_i)
+
+            ,.scalar_i      (scalar_i)
+            ,.w_data_i      (w_data_i)
+            
+            ,.v_i           (v_i)
+            ,.ready_o       (ready_o)
 
             // output interface
-            ,.done_o    (done_o)
-            ,.r_data_o  (r_data_o)
-            ,.v_o       (v_o)
-            ,.yumi_i    (yumi_i)
+            ,.done_o        (done_o)
+            ,.r_data_o      (r_data_o)
+            ,.v_o           (v_o)
+            ,.yumi_i        (yumi_i)
             );
 
     initial begin
-        op_i <= '0; addrA_i <= '0; addrB_i <= '0; addrC_i <= '0; addrD_i <= '0; w_data_i <= '0; v_i <= 0; yumi_i <= 0; scalar_i <= '0; reset <= 1; @(posedge clk);
+        op_i <= '0; addrA_i <= '0; addrB_i <= '0; addrD_i <= '0; w_data_i <= '0; v_i <= 0; yumi_i <= 0; scalar_i <= '0; reset <= 1; @(posedge clk);
         reset <= 0; repeat(1) @(posedge clk);
         $display("================ STARTING TEST ================");
-        /*
-        write(1, 16'b0000_0001_0000_0001);
-        write(2, 16'b0001_0001_0100_0100);
-        alu(0, 1, 2, 0, 0, 0); // add R0, R1, R2
-        read(0); // expected 16'b0001_0010_0100_0101 - YES
 
-        alu(1, 2, 1, 3, 0, 0); // sub R3, R2, R1
-        read(3); // expected 16'b0001_0000_0100_0011 - YES
+        // write(1, 16'b0000_0001_0000_0001);
+        // write(2, 16'b0001_0001_0100_0100);
 
-        alu(2, 1, 3, 5, 0, 0); // mul R5, R1, R3
-        read(5); // expected 16'b0000_0000_0000_0011 - YES
-        */
+        // alu(0, 1, 2, 0, 0, 0); // add R0, R1, R2
+        // read(0); // expected 16'b0001_0010_0100_0101 - YES
 
-        write(4, 16'b0001_0001_0010_0010);
-        write(5, 16'b0100_1000_0010_0010);
-        write(6, 16'b0000_0110_0001_0011);
-        fma(4, 5, 6, 7);
-        read(7); // expected 16'b0100_1110_0101_0111 - 
+        // alu(1, 2, 1, 3, 0, 0); // sub R3, R2, R1
+        // read(3); // expected 16'b0001_0000_0100_0011 - YES
+
+        // alu(2, 1, 3, 5, 0, 0); // mul R5, R1, R3
+        // read(5); // expected 16'b0000_0000_0000_0011 - YES
+
+        // read(1);
+        // alu(2, 1, 1, 1, 1, 2); // addi R1, R1, 'd2
+        // read(1); // expected 16'b0000_0010_0000_0010 - YES
+
+        write(0, 16'b0001_0001_0001_0001);
+        write(1, 16'b0100_0011_0010_0001);
+        write(2, 16'b0100_0011_0010_0001);
+        write(3, 16'b0100_0011_0010_0001);
+        write(4, 16'b0100_0011_0010_0001);
+
+        repeat(5) @(posedge clk);
+        dotprod(0, 1, 5);
+        read(5); // expected 16'b1000_1000_1000_1000
+ 
         $display("================ ENDING TEST ================");
         $finish;
     end
@@ -109,7 +121,7 @@ module top_tb;
             /*mul*/ 2: op_i[1:0] = 2'b10;
         endcase
 
-        addrA_i = addr1; addrB_i = addr2; addrD_i = addrOut; v_i = 1;
+        addrA_i = addr1; addrB_i = addr2; addrD_i = addrOut; v_i = 1; scalar_i = scalar;
         @(posedge clk);
         v_i = 0;
         while(~done_o) begin
@@ -119,16 +131,14 @@ module top_tb;
     end
     endtask
 
-    task fma(input int addr1, addr2, addr3, addrOut);
+    task dotprod(input int addr1, addr2, addrOut);
     begin
         @(posedge clk);
-        op_i = 4'b0011;
-
-        addrA_i = addr1; addrB_i = addr2; addrC_i = addr3; addrD_i = addrOut; v_i = 1;
+        op_i = 4'b1111; addrA_i = addr1; addrB_i = addr2; addrD_i = addrOut; v_i = 1;
         @(posedge clk);
         v_i = 0;
         while(~done_o) begin
-            $display("fma operation busy...");
+            $display("dot product working...");
             @(posedge clk);
         end
     end

@@ -12,21 +12,17 @@ module vrf #( parameter els_p = 32  // number of vectors stored
 
             , localparam v_addr_width_lp = `BSG_SAFE_CLOG2(els_p)
             , localparam local_addr_width_lp = `BSG_SAFE_CLOG2(vlen_p)
-            // , localparam addr_width_lp = v_addr_width_lp + local_addr_width_lp
             )
     ( input  logic clk_i
     , input  logic reset_i
-        
-    // each lane must be able to access 3 vectors to support matrix mul
+
     , input  logic [lanes_p-1:0][v_addr_width_lp-1:0] r_reg0_addr_i
     , input  logic [lanes_p-1:0][v_addr_width_lp-1:0] r_reg1_addr_i
-    , input  logic [lanes_p-1:0][v_addr_width_lp-1:0] r_reg2_addr_i
 
     // only need one addr per lane, because access pattern is same addr for each read vector
     , input  logic [lanes_p-1:0][local_addr_width_lp-1:0] r_addr_i
     , output logic [lanes_p-1:0][vdw_p-1:0] r0_data_o
     , output logic [lanes_p-1:0][vdw_p-1:0] r1_data_o
-    , output logic [lanes_p-1:0][vdw_p-1:0] r2_data_o
 
     , input  logic [v_addr_width_lp-1:0] w_reg_addr_i
 
@@ -69,9 +65,9 @@ module vrf #( parameter els_p = 32  // number of vectors stored
             logic [lanes_p-1:0][vdw_p-1:0] r0_data_lo, r1_data_lo, r2_data_lo;
             
             bsg_mux    #(.width_p(lanes_p*vdw_p)
-                 ,.els_p(els_p))
+                        ,.els_p(els_p))
                 els_to_lanes_mux0
-            (.data_i    (r_data_lo)
+                    (.data_i    (r_data_lo)
                     ,.sel_i     (r_reg0_addr_i[i])
                     ,.data_o    (r0_data_lo)
                     );
@@ -81,12 +77,12 @@ module vrf #( parameter els_p = 32  // number of vectors stored
                     (.data_i    (r0_data_lo)
                     ,.sel_i     ((`BSG_SAFE_CLOG2(lanes_p))'(i))
                     ,.data_o    (r0_data_o[i])
-            );
+                    );
 
             bsg_mux    #(.width_p(lanes_p*vdw_p)
-                 ,.els_p(els_p))
+                        ,.els_p(els_p))
                 els_to_lanes_mux1
-            (.data_i    (r_data_lo)
+                    (.data_i    (r_data_lo)
                     ,.sel_i     (r_reg1_addr_i[i])
                     ,.data_o    (r1_data_lo)
                     );
@@ -96,22 +92,7 @@ module vrf #( parameter els_p = 32  // number of vectors stored
                     (.data_i    (r1_data_lo)
                     ,.sel_i     ((`BSG_SAFE_CLOG2(lanes_p))'(i))
                     ,.data_o    (r1_data_o[i])
-            );
-    
-            bsg_mux    #(.width_p(lanes_p*vdw_p)
-                 ,.els_p(els_p))
-                els_to_lanes_mux2
-            (.data_i    (r_data_lo)
-                    ,.sel_i     (r_reg2_addr_i[i])
-                    ,.data_o    (r2_data_lo)
                     );
-            bsg_mux    #(.width_p(vdw_p)
-                        ,.els_p(lanes_p))
-                lanes_to_lane_mux2
-                    (.data_i    (r2_data_lo)
-                    ,.sel_i     ((`BSG_SAFE_CLOG2(lanes_p))'(i))
-                    ,.data_o    (r2_data_o[i])
-            );
         end // lanes
     endgenerate
 
