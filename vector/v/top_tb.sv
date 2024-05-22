@@ -63,7 +63,7 @@ module top_tb;
         2 1 2 1     3 1 1 1     12 12 9  10
         1 2 2 1     1 2 3 1     14 11 10 8
         */
-        /* vector storage:
+        /* vector storage (how its represented in the regfile for the hardware):
         1 1 1 1     1 3 3 1     
         1 2 1 2     3 2 1 2
         2 1 2 1     1 2 1 3
@@ -81,7 +81,6 @@ module top_tb;
 
         mmul(8, 0, 4);
         readMatrix(8);
-        
  
         $display("================ ENDING TEST ================");
         $finish;
