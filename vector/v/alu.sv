@@ -1,4 +1,5 @@
 // 5/18: simplified to remove multiplication in process of converting EX stage to multiply-accumulate
+// 5/21: DEPRECATED
 
 `include "bsg_defines.v"
 
@@ -18,11 +19,6 @@ module alu #( parameter vdw_p = 32
     , output logic flag_zero_o
     , output logic flag_negative_o
     );
-
-    // typedef enum logic [op_width_p-1:0] {
-    //     eAdd='d0,
-    //     eSub='d1,
-    // } eOp;
 
     logic [vdw_p-1:0] b_inv, adder_b_li, adder_s_lo;
     logic adder_c_lo;

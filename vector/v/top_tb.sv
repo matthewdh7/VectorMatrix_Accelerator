@@ -1,10 +1,10 @@
 `include "bsg_defines.v"
 module top_tb;
 
-    parameter els_p = 10;  // number of vectors stored
-    parameter vlen_p = 4;  // number of elements per vector
+    parameter els_p = 12;  // number of vectors stored
+    parameter vlen_p = 2;  // number of elements per vector
     parameter vdw_p = 4;  // number of bits per element
-    parameter lanes_p = 2; // also used as stride in local addr calculation
+    parameter lanes_p = 1; // also used as stride in local addr calculation
     localparam v_addr_width_lp = `BSG_SAFE_CLOG2(els_p);
 
     /* Dump Test Waveform To VPD File */
@@ -57,19 +57,44 @@ module top_tb;
         reset <= 0; repeat(1) @(posedge clk);
         $display("================ STARTING TEST ================");
 
-        write(0, 16'b0001_0001_0001_0001);
+        // /* 
+        // 1 1 1 1     1 2 3 4     8  12 10 10
+        // 2 2 2 2  x  4 3 2 1  =  16 24 20 20
+        // 3 3 3 3     1 3 1 3     24 36 30 30
+        // 1 2 3 4     2 4 4 2     20 33 26 23
+        // */
+        // write(0, 24'b000001_000001_000001_000001); // 1 1 1 1
+        // write(1, 24'b000010_000010_000010_000010); // 2 2 2 2
+        // write(2, 24'b000011_000011_000011_000011); // 3 3 3 3
+        // write(3, 24'b000001_000010_000011_000100); // 1 2 3 4
 
-        write(1, 16'b0100_0011_0010_0001);
-        write(2, 16'b0010_0010_0010_0010);
-        write(3, 16'b0001_0000_0000_0111);
-        write(4, 16'b0010_0011_0000_0110);
+        // // this matrix is already transposed before storing
+        // write(4, 24'b000001_000100_000001_000010); // 1 4 1 2
+        // write(5, 24'b000010_000011_000011_000100); // 2 3 3 4
+        // write(6, 24'b000011_000010_000001_000100); // 3 2 1 4
+        // write(7, 24'b000100_000001_000011_000010); // 4 1 3 2
 
-        repeat(5) @(posedge clk);
-        dotprod(5, 0, 1);
-        read(5); // expected 16'b1011_1000_1000_1010 - YES
+        // repeat(5) @(posedge clk); // to make it easier to identify break in waveform
 
-        alu(0, 7, 1, 2, 0, 0);
-        read(7); // expected 16'b0110_0101_0100_0011 - YES
+        // mmul(8, 0, 4);
+        // read(8); // expect  001000_001100_001010_001010
+        // read(9); //         010000_011000_010100_010100
+        // read(10); //        011000_100100_011110_011110
+        // read(11); //        010100_100001_011010_010111
+
+        write(0, 8'b0001_0001);
+        write(1, 8'b0010_0010);
+
+        write(2, 8'b0001_0100);
+        write(3, 8'b0011_0010);
+
+        read(0);
+        read(2);
+
+        mmul(4, 0, 2);
+        read(4);
+        read(5);
+        
  
         $display("================ ENDING TEST ================");
         $finish;
@@ -119,8 +144,7 @@ module top_tb;
     end
     endtask
 
-    // more like a partial matrix multiply than just a dot product
-    task dotprod(input int addrOut, addr1, addr2);
+    task mmul(input int addrOut, addr1, addr2);
     begin
         @(posedge clk);
         op_i = 4'b1111; addrA_i = addr1; addrB_i = addr2; addrD_i = addrOut; v_i = 1;

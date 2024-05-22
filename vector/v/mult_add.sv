@@ -1,3 +1,5 @@
+// DEPRECATED
+
 `include "bsg_defines.v"
 
 // Multiply-add unit, R0*R1 + R2 -> R3

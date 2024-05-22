@@ -29,17 +29,25 @@ module v_reg   #( parameter vlen_p = 8  // number of elements in vector
     logic [els_per_bank_lp-1:0][vdw_p-1:0] bank [lanes_p-1:0];
 
     genvar i;
-    for (i = 0; i < lanes_p; i++) begin: r_lane
-        // read
-        assign r_addr_li[i] = r_addr_i[i] >> lane_addr_width_lp;
-        assign which_bank[i] = r_addr_i[i][lane_addr_width_lp-1:0];
-        assign r_data_o[i] = bank[which_bank[i]][r_addr_li[i]];
+    if (lanes_p > 1) begin
+        for (i = 0; i < lanes_p; i++) begin: r_lane
+            // read
+            assign r_addr_li[i] = r_addr_i[i] >> lane_addr_width_lp;
+            assign which_bank[i] = r_addr_i[i][lane_addr_width_lp-1:0];
+            assign r_data_o[i] = bank[which_bank[i]][r_addr_li[i]];
 
-        // write
-        assign w_addr_li[i] = w_addr_i[i] >> lane_addr_width_lp;
+            // write
+            assign w_addr_li[i] = w_addr_i[i] >> lane_addr_width_lp;
+            always_ff @(posedge clk_i) begin
+                if (w_en_i[i]) bank[i][w_addr_li[i]] <= w_data_i[i];
+            end // always_ff
+        end // r_lane
+    end 
+    else begin // special case for single lane
+        assign r_data_o = bank[0][r_addr_i];
         always_ff @(posedge clk_i) begin
-            if (w_en_i[i]) bank[i][w_addr_li[i]] <= w_data_i[i];
+            if (w_en_i) bank[0][w_addr_i] <= w_data_i;
         end // always_ff
-    end // r_lane
+    end
 
 endmodule

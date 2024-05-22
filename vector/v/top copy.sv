@@ -1,19 +1,17 @@
 `include "bsg_defines.v"
-module top      #( parameter els_p = 8  // number of vectors stored
+module top_copy      #( parameter els_p = 8  // number of vectors stored
                  , parameter vlen_p = 8  // number of elements per vector
                  , parameter vdw_p = 8  // number of bits per element
  
                  , parameter lanes_p = 4
-
-                 , localparam id_width_lp = `BSG_SAFE_CLOG2(lanes_p)
  
                  , localparam v_addr_width_lp = `BSG_SAFE_CLOG2(els_p)
                  , localparam local_addr_width_lp = `BSG_SAFE_CLOG2(vlen_p)
                  , localparam addr_width_lp = v_addr_width_lp + local_addr_width_lp
+                 , localparam els_per_lane_lp = vlen_p / vdw_p
                  , localparam vectors_per_lane_lp = vlen_p / lanes_p
-
-                 , localparam vels_per_lane_lp = vlen_p / lanes_p
-                 , localparam counter_width_lp = 5//`BSG_SAFE_CLOG2(vels_per_lane_lp)
+                 , localparam counter_width_lp = `BSG_SAFE_CLOG2(els_per_lane_lp)
+                 , localparam id_width_lp = `BSG_SAFE_CLOG2(lanes_p)
                 )
     ( input clk_i
     , input reset_i
@@ -58,12 +56,10 @@ module top      #( parameter els_p = 8  // number of vectors stored
     logic start_li, start_n;
     logic [3:0] latch_op;
 
-    logic [lanes_p-1:0][v_addr_width_lp-1:0] addrA_li, addrB_li;
-    logic [v_addr_width_lp-1:0] addrD_li;
+    logic [lanes_p-1:0][v_addr_width_lp-1:0] addrA_li, addrB_li, addrD_li;
 
-    logic fma_inner_counter_set_li, fma_outer_counter_set_li, data_counter_set_li;
-    logic [counter_width_lp-1:0] fma_inner_count_lo, data_count_lo;
-    logic [local_addr_width_lp-1:0] fma_outer_count_lo;
+    logic fma_counter_set_li, data_counter_set_li;
+    logic [counter_width_lp-1:0] fma_count_lo, data_count_lo;
 
     //// state handler
     enum {s_IDLE, s_LOOP, s_FMA_START, s_FMA_LOOP, s_DONE} ps, ns;
@@ -73,7 +69,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
             s_LOOP:         ns = &done_lo ? s_DONE : s_LOOP;
 
             s_FMA_START:    ns = s_FMA_LOOP;
-            s_FMA_LOOP:     ns = &done_lo ? (fma_outer_count_lo == vlen_p - 1 ? s_DONE : s_FMA_START) : s_FMA_LOOP;
+            s_FMA_LOOP:     ns = &done_lo ? (fma_count_lo == vectors_per_lane_lp - 1 ? s_DONE : s_FMA_START) : s_FMA_LOOP;
 
             s_DONE:         ns = (latch_op == 4'b1000) ? (yumi_i ? s_IDLE : s_DONE) : s_IDLE;
         endcase
@@ -87,29 +83,17 @@ module top      #( parameter els_p = 8  // number of vectors stored
     assign start_n = (ps == s_IDLE & ns == s_LOOP) | ps == s_FMA_START;
     always_ff @(posedge clk_i) start_li <= start_n;
 
-    assign fma_inner_counter_set_li = ps == s_IDLE | (fma_inner_count_lo == vectors_per_lane_lp - 1 & &done_lo);
-    assign fma_outer_counter_set_li = ps == s_IDLE;
+    assign fma_counter_set_li = ps == s_IDLE;
 
-    bsg_counter_set_en #(.max_val_p(31))
-        fma_inner_cycle_counter
+    bsg_counter_set_en #(.max_val_p(vectors_per_lane_lp-1))
+        fma_cycle_counter
             (.clk_i     (clk_i)
             ,.reset_i   (reset_i)
 
-            ,.set_i     (fma_inner_counter_set_li)
+            ,.set_i     (fma_counter_set_li)
             ,.en_i      (&done_lo) // if more v els than lanes, each lane needs to do multiple dot products to finish matrix
             ,.val_i     ('0)
-            ,.count_o   (fma_inner_count_lo)
-            );
-
-    bsg_counter_set_en #(.max_val_p(31))
-        fma_outer_cycle_counter
-            (.clk_i     (clk_i)
-            ,.reset_i   (reset_i)
-
-            ,.set_i     (fma_outer_counter_set_li)
-            ,.en_i      ((fma_inner_count_lo == vectors_per_lane_lp - 1) & &done_lo)
-            ,.val_i     ('0)
-            ,.count_o   (fma_outer_count_lo)
+            ,.count_o   (fma_count_lo)
             );
 
     //// convert external port read/write data to/from lane-usable read/write data
@@ -147,10 +131,10 @@ module top      #( parameter els_p = 8  // number of vectors stored
 
     //// lane address decode
     for (i = 0; i < lanes_p; i++) begin : lane_addresses
-        assign addrA_li[i] = addrA_i + fma_outer_count_lo;
-        assign addrB_li[i] = (latch_op == 4'b1111) ? addrB_i + (v_addr_width_lp)'(i) + (fma_inner_count_lo * lanes_p): addrB_i;
+        assign addrA_li[i] = addrA_i;
+        assign addrB_li[i] = (latch_op == 4'b1111) ? addrB_i + (v_addr_width_lp)'(i) + (fma_count_lo * lanes_p): addrB_i;
+        assign addrD_li[i] = addrD_i;
     end
-    assign addrD_li = addrD_i + (latch_op == 4'b1111 ? fma_outer_count_lo : '0);
 
     //// lanes
     logic [lanes_p-1:0][local_addr_width_lp-1:0] r_addr_lo, w_addr_lo;
@@ -159,7 +143,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
 
     // only used for dot product
     logic [local_addr_width_lp-1:0] w_addr_offset_li;
-    assign w_addr_offset_li = (fma_inner_count_lo * lanes_p);
+    assign w_addr_offset_li = (fma_count_lo * lanes_p);
 
     for (i = 0; i < lanes_p; i++) begin : lane
         lane #(.els_p(els_p)
@@ -210,7 +194,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
             ,.r0_data_o     (r0_data_li)
             ,.r1_data_o     (r1_data_li)
 
-            ,.w_reg_addr_i  (addrD_li)
+            ,.w_reg_addr_i  (addrD_i)
 
             ,.w_addr_i      (w_addr_lo)
             ,.w_data_i      (w_data_lo)

@@ -1,9 +1,5 @@
 `include "bsg_defines.v"
 
-/*
-    Three vector registers can be active at any given time, and the input read addresses will select which element
-    of the vectors that lane is working on.
-*/
 module vrf #( parameter els_p = 32  // number of vectors stored
             , parameter vlen_p = 8  // number of elements per vector
             , parameter vdw_p = 32  // number of bits per element
