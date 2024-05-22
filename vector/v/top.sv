@@ -65,6 +65,9 @@ module top      #( parameter els_p = 8  // number of vectors stored
     logic [counter_width_lp-1:0] fma_inner_count_lo, data_count_lo;
     logic [local_addr_width_lp-1:0] fma_outer_count_lo;
 
+    logic fma_loop_exit;
+    assign fma_loop_exit = (fma_outer_count_lo == vlen_p - 1) & (fma_inner_count_lo == vectors_per_lane_lp - 1);
+
     //// state handler
     enum {s_IDLE, s_LOOP, s_FMA_START, s_FMA_LOOP, s_DONE} ps, ns;
     always_comb begin
@@ -73,7 +76,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
             s_LOOP:         ns = &done_lo ? s_DONE : s_LOOP;
 
             s_FMA_START:    ns = s_FMA_LOOP;
-            s_FMA_LOOP:     ns = &done_lo ? (fma_outer_count_lo == vlen_p - 1 ? s_DONE : s_FMA_START) : s_FMA_LOOP;
+            s_FMA_LOOP:     ns = &done_lo ? (fma_loop_exit ? s_DONE : s_FMA_START) : s_FMA_LOOP;
 
             s_DONE:         ns = (latch_op == 4'b1000) ? (yumi_i ? s_IDLE : s_DONE) : s_IDLE;
         endcase
@@ -148,7 +151,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
     //// lane address decode
     for (i = 0; i < lanes_p; i++) begin : lane_addresses
         assign addrA_li[i] = addrA_i + fma_outer_count_lo;
-        assign addrB_li[i] = (latch_op == 4'b1111) ? addrB_i + (v_addr_width_lp)'(i) + (fma_inner_count_lo * lanes_p): addrB_i;
+        assign addrB_li[i] = (latch_op == 4'b1111) ? addrB_i + (v_addr_width_lp)'(vlen_p - 1 - i) - (fma_inner_count_lo * lanes_p): addrB_i;
     end
     assign addrD_li = addrD_i + (latch_op == 4'b1111 ? fma_outer_count_lo : '0);
 
