@@ -2,18 +2,18 @@
 # Used by both synthesis and RTL simulation.
 synthesis.inputs.input_files: [
   # TODO: list verilog files
-  "v/alu.sv",
-  "v/regfile.sv",
-  "v/v_reg.sv",
-  "v/lane.sv",
-  "v/top.sv",
-  "v/multadd.sv",
-  "${bsg_root}/bsg_misc/bsg_defines.v",
+  # "${bsg_root}/bsg_misc/bsg_defines.v",
   "${bsg_root}/bsg_misc/bsg_adder_ripple_carry.v",
   "${bsg_root}/bsg_misc/bsg_mul_synth.v",
   "${bsg_root}/bsg_misc/bsg_mux.v",
   "${bsg_root}/bsg_misc/bsg_counter_set_en.v",
-  "${bsg_root}/bsg_misc/bsg_dff.v"
+  "${bsg_root}/bsg_misc/bsg_dff.v",
+  "v/alu.sv",
+  "v/v_reg.sv",
+  "v/regfile.sv",
+  "v/multadd.sv",
+  "v/lane.sv",
+  "v/top.sv"
 ]
 synthesis.inputs.input_files_meta: [append, subst]
 

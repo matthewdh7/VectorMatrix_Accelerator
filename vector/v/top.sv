@@ -1,9 +1,10 @@
 `include "bsg_defines.v"
-module top      #( parameter els_p = 8  // number of vectors stored
-                 , parameter vlen_p = 8  // number of elements per vector
-                 , parameter vdw_p = 8  // number of bits per element
+
+module top      #( parameter els_p = 12 // number of vectors stored
+                 , parameter vlen_p = 4 // number of elements per vector
+                 , parameter vdw_p = 6  // number of bits per element
  
-                 , parameter lanes_p = 4
+                 , parameter lanes_p = 2
 
                  , localparam id_width_lp = `BSG_SAFE_CLOG2(lanes_p)
  
@@ -13,7 +14,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
                  , localparam vectors_per_lane_lp = vlen_p / lanes_p
 
                  , localparam vels_per_lane_lp = vlen_p / lanes_p
-                 , localparam counter_width_lp = 5//`BSG_SAFE_CLOG2(vels_per_lane_lp)
+                 , localparam counter_width_lp = 5
                 )
     ( input clk_i
     , input reset_i
@@ -42,7 +43,6 @@ module top      #( parameter els_p = 8  // number of vectors stored
     0000: add
     0001: sub
     0010: mult
-    0011: multiply-add - UNUSED AFTER IMPLEMENTING M MUL
     0100: add v&s
     0101: sub v&s
     0110: mult v&s
@@ -58,9 +58,11 @@ module top      #( parameter els_p = 8  // number of vectors stored
     logic start_li, start_n;
     logic [3:0] latch_op;
 
+    // local address inputs
     logic [lanes_p-1:0][v_addr_width_lp-1:0] addrA_li, addrB_li;
     logic [v_addr_width_lp-1:0] addrD_li;
 
+    // counter signals for matrix multiplication and shifting
     logic fma_inner_counter_set_li, fma_outer_counter_set_li, data_counter_set_li;
     logic [counter_width_lp-1:0] fma_inner_count_lo, data_count_lo;
     logic [local_addr_width_lp-1:0] fma_outer_count_lo;
@@ -93,6 +95,7 @@ module top      #( parameter els_p = 8  // number of vectors stored
     assign fma_inner_counter_set_li = ps == s_IDLE | (fma_inner_count_lo == vectors_per_lane_lp - 1 & &done_lo);
     assign fma_outer_counter_set_li = ps == s_IDLE;
 
+    // counters to manage matrix multiplication iterations
     bsg_counter_set_en #(.max_val_p(31))
         fma_inner_cycle_counter
             (.clk_i     (clk_i)
@@ -223,6 +226,6 @@ module top      #( parameter els_p = 8  // number of vectors stored
     //// external output signals
     assign done_o = ps == s_DONE;
     assign ready_o = ps == s_IDLE;
-    assign v_o = done_o;
+    assign v_o = done_o & latch_op == 4'b1000;
 
 endmodule

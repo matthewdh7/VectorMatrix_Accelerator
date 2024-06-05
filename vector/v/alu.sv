@@ -1,5 +1,4 @@
 // 5/18: simplified to remove multiplication in process of converting EX stage to multiply-accumulate
-// 5/21: DEPRECATED
 
 `include "bsg_defines.v"
 

@@ -28,8 +28,8 @@ vlsi.inputs.placement_constraints:
   - path: "TOP" # (this name isn't actually checked...)
     type: toplevel
     # TODO: define chip dimensions
-    width:  200
-    height: 200
+    width:  300
+    height: 300
     x: 0
     y: 0
     margins: {left: 0, right: 0, top: 0, bottom: 0}
