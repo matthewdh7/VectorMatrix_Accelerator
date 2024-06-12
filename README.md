@@ -1,4 +1,4 @@
-## SystemVerilog Hardware Accelerator for Vector Operations and Matrix-Matrix Multiplication
+## SystemVerilog Hardware Accelerator for Vector-Vector, Vector-Scalar Operations and Matrix-Matrix Multiplication
 This repository was created for a capstone project in EE478/526 at the University of Washington. 
 Acknowledgments to Professor Michael Taylor, Paul Gao, and Elpida Karapepera for their guidance and assistance throughout the course.
 For the full report, including motivation, design, and results, please see here: https://docs.google.com/document/d/1uwJeSyHIt_3itZhpN5g818yE82ReDlQoD0Q9F9ue2dk/edit?usp=sharing
